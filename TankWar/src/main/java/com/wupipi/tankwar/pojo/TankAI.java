@@ -13,7 +13,6 @@ public class TankAI {
 
   private Random random = new Random();
 
-  private int frame = 0;
 
   private Map<Tank, Long> lastCommandFrame = new HashMap<Tank, Long>();
 
@@ -22,18 +21,14 @@ public class TankAI {
   }
 
   public void ai() {
-    for (Tank tank : battle.tanks) {
-      if (tank != battle.playerTank) {
-
-        // every tank receive command every half second
-        if (frame % 25 == 0) {
-          tank.setMove(true);
-          tank.fire(true);
-          tank.head(Direction.values()[random.nextInt(4)]);
-        }
+    for (Tank tank : battle.getTanks(Ally.NPC)) {
+      // every tank receive command every half second
+      if (battle.frame % 25 == 0) {
+        tank.setMove(true);
+        tank.fire(true);
+        tank.head(Direction.values()[random.nextInt(4)]);
       }
     }
 
-    frame++;
   }
 }

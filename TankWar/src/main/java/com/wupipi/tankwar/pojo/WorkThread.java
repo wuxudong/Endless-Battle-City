@@ -2,7 +2,6 @@ package com.wupipi.tankwar.pojo;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.Log;
 
@@ -12,8 +11,7 @@ import com.wupipi.tankwar.TankWarView;
 /**
  * Created by xudong on 8/2/13.
  */
-public class
-    WorkThread extends Thread {
+public class WorkThread extends Thread {
 
   private TankWarView tankWarView;
 
@@ -27,20 +25,12 @@ public class
 
 
   private long mMoveDelay = 20;
-  /**
-   * mLastMove: Tracks the absolute time when the snake last moved, and is used to determine if
-   * com.wupipi.tankwar.a
-   * move should be made based on mMoveDelay.
-   */
-  private long mLastMove;
 
   private final Paint mPaint = new Paint();
 
   private TankWarImage tankWarImage;
 
   public void moveTank(int direction) {
-
-    // Log.d("TANK_WAR", "move to " + direction);
 
     if (direction == Const.MOVE_UP) {
       battle.playerTank.head(Direction.NORTH);
@@ -101,31 +91,33 @@ public class
   public void run() {
     Canvas canvas = null;
     while (!isInterrupted()) {
+
+      long start = System.currentTimeMillis();
       try {
 
         canvas = tankWarView.getHolder().lockCanvas();
 
-        int min = Math.min(canvas.getWidth(), canvas.getHeight());
+        float sx = (float)canvas.getWidth() / (float)512;
 
-        float scale =
-            (float) min
-                / (float) (Const.OFFSET_PER_TILE * Const.TILE_COUNT);
+        float sy =
+            (float) canvas.getHeight()
+                / (float) 448;
 
 
-        canvas.scale(scale, scale);
-        Log.d("Tank_War", "current matrix " + canvas.getMatrix());
-        Log.d("Tank_War", "newly matrix " + new Matrix());
-
+        canvas.scale(sx, sy);
 
         battle.update();
 
         canvas.drawColor(Color.BLACK);
-        for (Drawable bullet : battle.bullets) {
-          bullet.draw(canvas, mPaint, tankWarImage);
-        }
+        for (Ally ally : Ally.values()) {
 
-        for (Drawable tank : battle.tanks) {
-          tank.draw(canvas, mPaint, tankWarImage);
+          for (Drawable bullet : battle.getBullets(ally)) {
+            bullet.draw(canvas, mPaint, tankWarImage);
+          }
+
+          for (Drawable tank : battle.getTanks(ally)) {
+            tank.draw(canvas, mPaint, tankWarImage);
+          }
         }
 
         for (Drawable tankStart : battle.tankStarts) {
@@ -134,10 +126,12 @@ public class
 
 
 
+        // TODO: grass should draw after bullet, but bullet is after ice and water
         for (int i = 0; i < Const.TILE_COUNT; i++) {
           for (int j = 0; j < Const.TILE_COUNT; j++) {
-            if (battle.gameMap.obstacles[i][j] != null) {
-              battle.gameMap.obstacles[i][j].draw(canvas, mPaint, tankWarImage);
+            Obstacle obstacle = battle.gameMap.get(i, j);
+            if (obstacle != null) {
+              obstacle.draw(canvas, mPaint, tankWarImage);
             }
           }
         }
@@ -155,6 +149,10 @@ public class
           hit.draw(canvas, mPaint, tankWarImage);
         }
 
+        if(battle.getFood() != null) {
+          battle.getFood().draw(canvas, mPaint, tankWarImage);
+        }
+
 
 
       } finally {
@@ -164,8 +162,14 @@ public class
         }
       }
 
+
+      Log.d("Tank_War", "spend " + (System.currentTimeMillis() - start));
       try {
-        sleep(mMoveDelay);
+
+        long delay = mMoveDelay - (System.currentTimeMillis() - start);
+        if (delay > 0) {
+          sleep(mMoveDelay);
+        }
       } catch (InterruptedException e) {}
     }
 

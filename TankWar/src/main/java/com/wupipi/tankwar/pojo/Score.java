@@ -7,9 +7,9 @@ import android.graphics.Point;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Score extends  Movable {
+public class Score extends Movable {
   enum ScoreNumber {
-    _100, _200, _400, _500
+    NONE, _100, _200, _400, _500
   }
 
   private int time = 0;
@@ -36,8 +36,10 @@ public class Score extends  Movable {
 
   @Override
   public void draw(Canvas canvas, Paint paint, TankWarImage tankWarImage) {
-    canvas
-        .drawBitmap(tankWarImage.score[scoreNumber.ordinal()], null, getRect(), paint);
+    if (scoreNumber != ScoreNumber.NONE) {
+      canvas
+          .drawBitmap(tankWarImage.score[scoreNumber.ordinal()], null, getRect(), paint);
+    }
   }
 
   @Override

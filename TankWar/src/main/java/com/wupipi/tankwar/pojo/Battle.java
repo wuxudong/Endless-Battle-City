@@ -23,9 +23,15 @@ public class Battle {
   public int mMode = WorkThread.RUNNING;
   public Tank playerTank;
 
-  public List<Tank> tanks = new CopyOnWriteArrayList<Tank>();
+  private List<Tank> playerTanks = new CopyOnWriteArrayList<Tank>();
 
-  public List<Bullet> bullets = new CopyOnWriteArrayList<Bullet>();
+  private List<Tank> npcTanks = new CopyOnWriteArrayList<Tank>();
+
+  private List<Bullet> playerBullets = new CopyOnWriteArrayList<Bullet>();
+
+  private List<Bullet> npcBullets = new CopyOnWriteArrayList<Bullet>();
+
+  private Food food = null;
 
   public List<Hit> hits = new CopyOnWriteArrayList<Hit>();
 
@@ -33,38 +39,57 @@ public class Battle {
 
   public List<TankStart> tankStarts = new CopyOnWriteArrayList<TankStart>();
 
-  public Home home = null;
   private TankAI ai = new TankAI(this);
 
-  private int frame = 0;
+  public int frame = 0;
   public List<Score> scores = new CopyOnWriteArrayList<Score>();
+
+  public GameMap gameMap;
+
+  private int homeGodTime = 0;
+  private int stopNpcTime = 0;
 
 
   public Battle() {
-    playerTank = new Play1Tank(this, new Point(9 * 16, 24 * 16));
-    tanks.add(playerTank);
+
+    playerTank = new Tank(this, new Point(9 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false);
+    playerTanks.add(playerTank);
 
 
-    Tank tank1 = new Tank1(this, new Point(0, 0));
-    tanks.add(tank1);
+    Tank tank1 = new Tank(this, new Point(0, 0), Ally.NPC, TankType.NPC1, false);
+    npcTanks.add(tank1);
 
-    Tank tank2 = new Tank2(this, new Point(182, 0));
-    tanks.add(tank2);
+    Tank tank2 = new Tank(this, new Point(182, 0), Ally.NPC, TankType.NPC2, false);
+    npcTanks.add(tank2);
 
-    Tank tank3 = new Tank3(this, new Point(384, 0));
-    tanks.add(tank3);
+    Tank tank3 = new Tank(this, new Point(384, 0), Ally.NPC, TankType.NPC3, false);
+    npcTanks.add(tank3);
   }
 
   public void update() {
-    frame ++;
+    frame++;
 
     ai.ai();
-    for (Tank obj : tanks) {
-      obj.move();
+
+    for (Tank t : playerTanks) {
+      t.move();
     }
 
-    for (Bullet obj : bullets) {
-      obj.move();
+    if (stopNpcTime > 0) {
+      stopNpcTime--;
+    } else {
+      for (Tank t : npcTanks) {
+        t.move();
+      }
+    }
+
+    for (Bullet b : playerBullets) {
+      b.move();
+    }
+
+
+    for (Bullet b : npcBullets) {
+      b.move();
     }
 
     for (Hit obj : hits) {
@@ -83,48 +108,97 @@ public class Battle {
       obj.move();
     }
 
+    if (food != null) {
+      food.move();
+    }
 
-    if (frame %250 == 0 && tanks.size() < 10) {
-      int where = random.nextInt(3);
-      switch (where) {
-        case 0: {
-          tankStarts.add(new TankStart(this,new Point(192, 0)));
-          break;
-        }
-        case 1: {
-          tankStarts.add(new TankStart(this,new Point(0, 0)));
-          break;
-        }
-        case 2: {
-          tankStarts.add(new TankStart(this,new Point(384, 0)));
-          break;
-        }
+
+    moreTankStart();
+
+    if (homeGodTime > 0) {
+      homeGodTime--;
+      if (homeGodTime == 0) {
+        protectHome(false);
       }
     }
 
   }
 
-  public GameMap gameMap;
+  public void moreFood() {
+
+    int x = random.nextInt((Const.TILE_COUNT - 1) * Const.OFFSET_PER_TILE);
+    int y = random.nextInt((Const.TILE_COUNT - 1) * Const.OFFSET_PER_TILE);
+
+    int index = random.nextInt(FoodType.values().length);
+    FoodType type = FoodType.values()[index];
+
+    Food food = new Food(this, new Point(x, y), type);
+    setFood(food);
+  }
+
+  private void moreTankStart() {
+    if (frame % 250 == 0 && npcTanks.size() < 10) {
+      int where = random.nextInt(3);
+      switch (where) {
+        case 0: {
+          tankStarts.add(new TankStart(this, new Point(192, 0)));
+          break;
+        }
+        case 1: {
+          tankStarts.add(new TankStart(this, new Point(0, 0)));
+          break;
+        }
+        case 2: {
+          tankStarts.add(new TankStart(this, new Point(384, 0)));
+          break;
+        }
+      }
+    }
+  }
+
 
   public List<Obstacle> getObstacles(Tile tile) {
     List<Obstacle> result = new ArrayList<Obstacle>();
 
-    if (gameMap.obstacles[tile.row][tile.col] != null) {
-      result.add(gameMap.obstacles[tile.row][tile.col]);
+    if (gameMap.get(tile.row, tile.col) != null) {
+      result.add(gameMap.get(tile.row, tile.col));
     }
 
     return result;
   }
 
-  public List<Movable> getMovable(Tile tile) {
-    List<Movable> result = new ArrayList<Movable>();
-    for (Tank tank : tanks) {
+  public List<Tank> getTanks(Tile tile, Ally ally) {
+    List<Tank> result = new ArrayList<Tank>();
+
+    for (Tank tank : getTanks(ally)) {
       if (Rect.intersects(tile.getRect(), tank.getRect())) {
         result.add(tank);
       }
     }
+    return result;
+  }
 
-    for (Bullet bullet : bullets) {
+  public List<Tank> getTanks(Ally ally) {
+    switch (ally) {
+      case PLAYER:
+        return playerTanks;
+      default:
+        return npcTanks;
+    }
+  }
+
+
+  public List<Tank> getTanks(Tile tile) {
+    List<Tank> result = new ArrayList<Tank>();
+    for (Ally ally : Ally.values()) {
+      result.addAll(getTanks(tile, ally));
+    }
+    return result;
+  }
+
+  public List<Bullet> getBullets(Tile tile, Ally ally) {
+    List<Bullet> result = new ArrayList<Bullet>();
+    for (Bullet bullet : getBullets(ally)) {
       if (Rect.intersects(tile.getRect(), bullet.getRect())) {
         result.add(bullet);
       }
@@ -132,4 +206,40 @@ public class Battle {
     return result;
   }
 
+  public List<Bullet> getBullets(Ally ally) {
+    switch (ally) {
+      case PLAYER:
+        return playerBullets;
+      default:
+        return npcBullets;
+    }
+  }
+
+  public Food getFood() {
+    return food;
+  }
+
+  public void setFood(Food food) {
+    this.food = food;
+  }
+
+  public void clearNpc() {
+    for (Tank t : getTanks(Ally.NPC)) {
+      bombs.add(new Bomb(this, t.position, Score.ScoreNumber.NONE));
+    }
+
+    getTanks(Ally.NPC).clear();
+  }
+
+  public void protectHome(boolean god) {
+    if (god) {
+      homeGodTime = 500;
+    }
+
+    gameMap.protectHome(god);
+  }
+
+  public void stopNpc() {
+    stopNpcTime = 500;
+  }
 }

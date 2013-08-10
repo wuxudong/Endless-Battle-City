@@ -20,12 +20,13 @@ public class Bullet extends Movable {
 
   private Battle battle;
 
-  private int power = 1;
+  private int power = 0;
 
   private Tank owner;
 
-  public Bullet(Battle battle, int speed, Point position, Direction direction, Tank owner) {
+  public Bullet(Battle battle, int power, int speed, Point position, Direction direction, Tank owner) {
     this.battle = battle;
+    this.power = power;
     this.speed = speed;
     this.position = position;
     this.direction = direction;
@@ -93,108 +94,122 @@ public class Bullet extends Movable {
 
 
     if (x < 0) {
-      battle.bullets.remove(this);
+      battle.getBullets(getAlly()).remove(this);
+      return;
     }
     else if (x >= Const.TILE_COUNT * Const.OFFSET_PER_TILE) {
-      battle.bullets.remove(this);
+      battle.getBullets(getAlly()).remove(this);
+      return;
     }
     else if (y < 0) {
-      battle.bullets.remove(this);
+      battle.getBullets(getAlly()).remove(this);
+      return;
     }
     else if (y >= Const.TILE_COUNT * Const.OFFSET_PER_TILE) {
-      battle.bullets.remove(this);
-    } else {
-      boolean hit = false;
-
-      List<Tile> crossTiles = Tile.getCrossedTiles(getRect());
-
-      for (Tile tile : crossTiles) {
+      battle.getBullets(getAlly()).remove(this);
+      return;
+    }
 
 
-        for (Obstacle object : battle.getObstacles(tile)) {
+    boolean hit = false;
 
-          if (!Rect.intersects(getRect(), object.rect)) {
-            continue;
-          }
+    List<Tile> crossTiles = Tile.getCrossedTiles(getRect());
 
-          if (object instanceof Wall) {
-            hit = true;
-            switch (direction) {
-              case NORTH: {
-                battle.gameMap.setWallTopChip(tile.row, tile.row);
-                break;
-              }
-              case SOUTH: {
-                battle.gameMap.setWallBottomChip(tile.row, tile.row);
-                break;
-              }
-              case WEST: {
-                battle.gameMap.setWallLeftChip(tile.row, tile.row);
-                break;
-              }
-              case EAST: {
-                battle.gameMap.setWallRightChip(tile.row, tile.row);
-                break;
-              }
-            }
-
-
-            battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
-
-            Log.d("Tank_War", "hit " + object);
-          } else if (object instanceof Grid) {
-            hit = true;
-            // TODO: CHECK POWER
-
-            battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
-          } else if (object instanceof Home) {
-            hit = true;
-
-            battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
-            ((Home) object).destroyed = true;
-            battle.mMode = WorkThread.LOSE;
-          } else if (object instanceof WallBottomChip || object instanceof WallLeftChip
-              || object instanceof WallTopChip || object instanceof WallRightChip) {
-            hit = true;
-            battle.gameMap.obstacles[tile.row][tile.col] = null;
-            battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
-          }
+    for (Tile tile : crossTiles) {
+      for (Obstacle object : battle.getObstacles(tile)) {
+        if (!Rect.intersects(getRect(), object.rect)) {
+          continue;
         }
 
+        if (object instanceof Wall) {
+          hit = true;
+          switch (direction) {
+            case NORTH: {
+              battle.gameMap.setWallTopChip(tile.row, tile.col);
+              break;
+            }
+            case SOUTH: {
+              battle.gameMap.setWallBottomChip(tile.row, tile.col);
+              break;
+            }
+            case WEST: {
+              battle.gameMap.setWallLeftChip(tile.row, tile.col);
+              break;
+            }
+            case EAST: {
+              battle.gameMap.setWallRightChip(tile.row, tile.col);
+              break;
+            }
+          }
 
 
-        for (Movable object : battle.getMovable(tile)) {
+          battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
+
+          Log.d("Tank_War", "hit " + object);
+        } else if (object instanceof Grid) {
+          hit = true;
+          // TODO: CHECK POWER
+
+          battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
+        } else if (object instanceof Home) {
+          hit = true;
+
+          battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
+          ((Home) object).destroyed = true;
+          battle.mMode = WorkThread.LOSE;
+        } else if (object instanceof WallBottomChip || object instanceof WallLeftChip
+            || object instanceof WallTopChip || object instanceof WallRightChip) {
+          hit = true;
+          battle.gameMap.clear(tile.row, tile.col);
+          battle.hits.add(new Hit(battle, new Point(position.x + 3, position.y + 3)));
+        }
+      }
+
+
+      for (Ally ally : Ally.values()) {
+        if (ally == getAlly())
+          continue;
+
+        for (Tank object : battle.getTanks(tile, ally)) {
           if (!Rect.intersects(getRect(), object.getRect())) {
             continue;
           }
 
-          if (object instanceof Tank && owner.getAlly() != ((Tank) object).getAlly()) {
-            hit = true;
-            battle.tanks.remove((Tank) object);
+          hit = true;
 
-            if (object instanceof Tank1 ) {
-              battle.bombs.add(new Bomb(battle, object.position, Score.ScoreNumber._100));
-            } else if (object instanceof Tank2) {
-              battle.bombs.add(new Bomb(battle, object.position, Score.ScoreNumber._200));
-            } else if (object instanceof Tank3) {
-              battle.bombs.add(new Bomb(battle, object.position, Score.ScoreNumber._400));
-            } else if (object instanceof Play1Tank) {
-              battle.bombs.add(new Bomb(battle, object.position, Score.ScoreNumber._400));
+          if (!object.isGod()) {
+            battle.getTanks(ally).remove(object);
+            if(object.isCarryFood()) {
+              battle.moreFood();
             }
-            Log.d("Tank_War", "hit " + object);
+
+            battle.bombs.add(new Bomb(battle, object.position, object.scoreNumber()));
           }
-          if (object instanceof Bullet && owner.getAlly() != ((Bullet) object).owner.getAlly()) {
-            hit = true;
-            battle.bullets.remove((Bullet) object);
-            Log.d("Tank_War", "hit " + object);
+          Log.d("Tank_War", "hit " + object);
+        }
+
+        for (Bullet object : battle.getBullets(tile, ally)) {
+          if (!Rect.intersects(getRect(), object.getRect())) {
+            continue;
           }
+
+          hit = true;
+          battle.getBullets(ally).remove(object);
+          Log.d("Tank_War", "hit " + object);
+
         }
       }
-      if (hit) {
-        battle.bullets.remove(this);
-      }
-
     }
+    if (hit) {
+      battle.getBullets(getAlly()).remove(this);
+      owner.fastCool();
+    }
+
+  }
+
+
+  private Ally getAlly() {
+    return owner.getAlly();
   }
 
 

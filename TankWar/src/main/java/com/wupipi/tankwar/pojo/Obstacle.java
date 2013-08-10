@@ -7,5 +7,5 @@ import com.wupipi.tankwar.pojo.Drawable;
  * Created by xudong on 8/7/13.
  */
 public abstract class Obstacle implements Drawable {
-  public Rect rect;
+  protected Rect rect;
 }

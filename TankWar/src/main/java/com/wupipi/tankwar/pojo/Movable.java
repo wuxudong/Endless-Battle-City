@@ -11,11 +11,11 @@ import android.graphics.Rect;
  * Created by xudong on 7/28/13.
  */
 public abstract class Movable implements Drawable{
-  public Point position;
+  protected Point position;
 
   abstract int getWidth();
   abstract int getHeight();
-  Rect getRect() {
+  public Rect getRect() {
     return new Rect(position.x, position.y , position.x + getWidth(), position.y + getHeight());
   }
   abstract void move();

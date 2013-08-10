@@ -2,8 +2,7 @@ package com.wupipi.tankwar.pojo;
 
 import java.util.List;
 
-import android.graphics.Point;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.util.Log;
 
 import com.wupipi.tankwar.Const;
@@ -11,7 +10,7 @@ import com.wupipi.tankwar.Const;
 /**
  * Created by xudong on 7/25/13.
  */
-public abstract class Tank extends Movable {
+public class Tank extends Movable {
 
   private int speed = 4;
 
@@ -19,15 +18,26 @@ public abstract class Tank extends Movable {
 
   private Battle battle;
 
-  private int fireCoolDown = 300;
+  private int fireCoolDown = 20;
 
-  private long lastFire = 0;
+  private int power = 1;
 
-  private int defaultBulletSpeed = 6;
+  private long coolingFrame = 0;
+
+  private int bulletSpeed = 6;
 
   private boolean move = false;
 
   private boolean fire = false;
+
+  private boolean god = false;
+
+  protected int godTime = 0;
+
+  private Ally ally;
+  private TankType tankType;
+
+  private boolean carryFood = false;
 
   /**
    * Current direction the tank is headed.
@@ -35,9 +45,12 @@ public abstract class Tank extends Movable {
   protected Direction direction = Direction.NORTH;
   private Direction nextDirection = Direction.NORTH;
 
-  public Tank(Battle battle, Point position) {
+  public Tank(Battle battle, Point position, Ally ally, TankType tankType, boolean carryFood) {
     this.battle = battle;
     this.position = position;
+    this.ally = ally;
+    this.tankType = tankType;
+    this.carryFood = carryFood;
   }
 
   @Override
@@ -131,6 +144,17 @@ public abstract class Tank extends Movable {
 
 
     fire();
+
+    if (godTime > 0) {
+      godTime--;
+      if (godTime == 0) {
+        god = false;
+      }
+    }
+
+    if (coolingFrame > 0) {
+      coolingFrame--;
+    }
   }
 
   public void fire(boolean b) {
@@ -145,7 +169,8 @@ public abstract class Tank extends Movable {
 
     int x = position.x;
     int y = position.y;
-    if (now - lastFire > fireCoolDown) {
+    if (coolingFrame == 0) {
+      coolingFrame = fireCoolDown;
       switch (this.direction)
       {
         case NORTH:
@@ -172,10 +197,9 @@ public abstract class Tank extends Movable {
 
 
 
-      Bullet bullet = new Bullet(battle, defaultBulletSpeed, new Point(x, y), direction, this);
-      battle.bullets.add(bullet);
+      Bullet bullet = new Bullet(battle, power, bulletSpeed, new Point(x, y), direction, this);
+      battle.getBullets(getAlly()).add(bullet);
       // Log.d("Tank_War", "fire to " + direction);
-      lastFire = now;
     }
   }
 
@@ -201,27 +225,20 @@ public abstract class Tank extends Movable {
         if (object == null || object instanceof Ice || object instanceof Grass) {
           // do nothing
         } else {
-          if (Rect.intersects(rect, object.rect)) {
-            reachableNorthY = Math.max(reachableNorthY, object.rect.bottom);
-            reachableSouthY = Math.min(reachableSouthY, object.rect.top);
-            reachableWestX = Math.max(reachableWestX, object.rect.right);
-            reachableEastX = Math.min(reachableEastX, object.rect.left);
-          }
+          reachableNorthY = Math.max(reachableNorthY, tile.getRect().bottom);
+          reachableSouthY = Math.min(reachableSouthY, tile.getRect().top);
+          reachableWestX = Math.max(reachableWestX, tile.getRect().right);
+          reachableEastX = Math.min(reachableEastX, tile.getRect().left);
         }
       }
 
-
-
-      for (Movable object : battle.
-          getMovable(tile)) {
-        if (object != this
-            || object instanceof Tank) {
-          if (Rect.intersects(rect, object.getRect())) {
-            reachableNorthY = Math.max(reachableNorthY, object.getRect().bottom);
-            reachableSouthY = Math.min(reachableSouthY, object.getRect().top);
-            reachableWestX = Math.max(reachableWestX, object.getRect().right);
-            reachableEastX = Math.min(reachableEastX, object.getRect().left);
-          }
+      for (Tank object : battle.
+          getTanks(tile)) {
+        if (object != this) {
+          reachableNorthY = Math.max(reachableNorthY, tile.getRect().bottom);
+          reachableSouthY = Math.min(reachableSouthY, tile.getRect().top);
+          reachableWestX = Math.max(reachableWestX, tile.getRect().right);
+          reachableEastX = Math.min(reachableEastX, tile.getRect().left);
         }
       }
 
@@ -239,16 +256,106 @@ public abstract class Tank extends Movable {
     }
   }
 
-  public boolean inTile(int x, int y) {
-    if (getRect().intersect(
-        new Rect(y * Const.OFFSET_PER_TILE, x * Const.OFFSET_PER_TILE,
-            (y + 1) * Const.OFFSET_PER_TILE, (x + 1) * Const.OFFSET_PER_TILE))) {
-      return true;
+  public void beGod() {
+    god = true;
+    godTime = 600;
+  }
+
+  public boolean isGod() {
+    return god;
+  }
+
+  public void star() {
+    fireCoolDown /= 2;
+    power++;
+
+    bulletSpeed = Math.min(2 * bulletSpeed, 7);
+  }
+
+  @Override
+  public void draw(Canvas canvas, Paint paint, TankWarImage tankWarImage) {
+
+    if (carryFood) {
+      if ((battle.frame / 5) % 2 == 0)
+        paint.setColorFilter(new LightingColorFilter(0xFFFFFFFF, 0x00FF0000));
     }
-    else {
-      return false;
+
+    switch (tankType) {
+      case PLAY1: {
+        canvas
+            .drawBitmap(tankWarImage.play1[direction.ordinal()], position.x, position.y,
+                paint);
+
+        break;
+      }
+      case PLAY2: {
+        // TODO
+        break;
+      }
+
+      case NPC1: {
+        canvas
+            .drawBitmap(tankWarImage.tank1[direction.ordinal()], null, getRect(),
+                paint);
+
+        break;
+      }
+
+      case NPC2: {
+        canvas
+            .drawBitmap(tankWarImage.tank2[direction.ordinal()], null, getRect(),
+                paint);
+
+        break;
+      }
+
+      case NPC3: {
+        canvas
+            .drawBitmap(tankWarImage.tank3[direction.ordinal()], null, getRect(),
+                paint);
+
+        break;
+      }
+
+    }
+
+    if (isGod()) {
+      int frame = (godTime / 6) % 2;
+
+      canvas
+          .drawBitmap(tankWarImage.shield[frame], position.x, position.y,
+              paint);
+    }
+
+    paint.setColorFilter(null);
+
+    Log.d("Tank_War", getRect().toString());
+
+    Log.d("Tank_War", "CANVAS " + canvas.getWidth() + " " + canvas.getHeight());
+  }
+
+  public Ally getAlly() {
+    return ally;
+  }
+
+  public Score.ScoreNumber scoreNumber() {
+    switch (tankType) {
+      case NPC1:
+        return Score.ScoreNumber._100;
+      case NPC2:
+        return Score.ScoreNumber._200;
+      case NPC3:
+        return Score.ScoreNumber._400;
+      default:
+        return Score.ScoreNumber.NONE;
     }
   }
 
-  abstract Ally getAlly();
+  public void fastCool() {
+    coolingFrame = Math.min(coolingFrame, 4);
+  }
+
+  public boolean isCarryFood() {
+    return carryFood;
+  }
 }

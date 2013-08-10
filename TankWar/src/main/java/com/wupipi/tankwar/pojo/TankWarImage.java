@@ -15,7 +15,6 @@ public class TankWarImage {
 
 
 
-
   enum ImageType {
     WALL, GRID, GRASS, ICE, WATER,
     HOME, HOME_DESTROYED, HOME_PLACEHOLDER,
@@ -43,9 +42,11 @@ public class TankWarImage {
   Bitmap[] tank2 = new Bitmap[Direction.values().length];
   Bitmap[] tank3 = new Bitmap[Direction.values().length];
   Bitmap[] bullet = new Bitmap[Direction.values().length];
+  Bitmap[] food = new Bitmap[FoodType.values().length];
   Bitmap[] hit = new Bitmap[3];
   Bitmap[] bomb = new Bitmap[4];
   Bitmap[] tankStart = new Bitmap[7];
+  Bitmap[] shield = new Bitmap[2];
 
   Bitmap[] score = new Bitmap[Score.ScoreNumber.values().length];
 
@@ -84,11 +85,36 @@ public class TankWarImage {
     initScore(bitmap);
 
 
-    for(int frame=0; frame<tankStart.length ;frame++) {
-      tankStart[frame] = Bitmap.createBitmap(bitmap, 32 * frame + TANK_START_ORIGIN.x, TANK_START_ORIGIN.y, 32, 32);
+    initTankStart(bitmap);
+
+    initFood(bitmap);
+
+    initShield(bitmap);
+
+  }
+
+  private void initShield(Bitmap bitmap) {
+    for (int frame = 0; frame < shield.length; frame++) {
+      shield[frame] =
+          Bitmap
+              .createBitmap(bitmap, SHIELD_ORIGIN.x, 32 * frame + SHIELD_ORIGIN.y, 32, 32);
     }
+  }
 
+  private void initFood(Bitmap bitmap) {
+    for (int type = 0; type < food.length; type++) {
+      food[type] =
+          Bitmap
+              .createBitmap(bitmap, 30 * type + FOOD_ORIGIN.x, FOOD_ORIGIN.y, 30, 28);
+    }
+  }
 
+  private void initTankStart(Bitmap bitmap) {
+    for (int frame = 0; frame < tankStart.length; frame++) {
+      tankStart[frame] =
+          Bitmap
+              .createBitmap(bitmap, 32 * frame + TANK_START_ORIGIN.x, TANK_START_ORIGIN.y, 32, 32);
+    }
   }
 
   private void initBomb(Bitmap bitmap) {

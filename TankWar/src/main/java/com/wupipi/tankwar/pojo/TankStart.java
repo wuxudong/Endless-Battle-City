@@ -53,22 +53,29 @@ public class TankStart extends  Movable {
       battle.tankStarts.remove(this);
       int type = random.nextInt(3);
       Tank tank = null;
+
+      boolean carryFood = random.nextInt(5) >= 2;
+
+
       switch (type) {
         case 0: {
-          tank = new Tank1(battle, position);
+          tank = new Tank(battle, position, Ally.NPC, TankType.NPC1, carryFood);
+          tank.head(Direction.SOUTH);
           break;
         }
         case 1: {
-          tank = new Tank2(battle, position);
+          tank = new Tank(battle, position, Ally.NPC, TankType.NPC2, carryFood);
+          tank.head(Direction.SOUTH);
           break;
         }
         case 2: {
-          tank = new Tank3(battle, position);
+          tank = new Tank(battle, position, Ally.NPC, TankType.NPC3, carryFood);
+          tank.head(Direction.SOUTH);
           break;
         }
       }
 
-      battle.tanks.add(tank);
+      battle.getTanks(Ally.NPC).add(tank);
     }
 
     time ++;

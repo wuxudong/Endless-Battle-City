@@ -8,7 +8,7 @@ import com.wupipi.tankwar.Const;
  * Created by xudong on 8/7/13.
  */
 public class GameMap {
-  public Obstacle[][] obstacles = new Obstacle[Const.TILE_COUNT][Const.TILE_COUNT];
+  private Obstacle[][] obstacles = new Obstacle[Const.TILE_COUNT][Const.TILE_COUNT];
 
   public void setWall(int i, int j) {
     Wall wall = new Wall();
@@ -98,6 +98,37 @@ public class GameMap {
     obstacles[i][j + 1] = home;
     obstacles[i + 1][j] = home;
     obstacles[i + 1][j + 1] = home;
+  }
+
+  public void protectHome(boolean god) {
+    if (god) {
+      setGrid(23,11);
+      setGrid(23,12);
+      setGrid(23,13);
+      setGrid(23,14);
+      setGrid(24,11);
+      setGrid(24,14);
+      setGrid(25,11);
+      setGrid(25,14);
+    } else {
+      setWall(23,11);
+      setWall(23,12);
+      setWall(23,13);
+      setWall(23,14);
+      setWall(24,11);
+      setWall(24,14);
+      setWall(25,11);
+      setWall(25,14);
+    }
+   }
+
+
+  public void clear(int i, int j) {
+    obstacles[i][j] = null;
+  }
+
+  public Obstacle get(int i, int j) {
+    return obstacles[i][j];
   }
 
 
