@@ -36,6 +36,8 @@ public class TankWarImage {
   private final static Point SHIELD_ORIGIN = new Point(160, 96);
   private final static Point TANK_START_ORIGIN = new Point(256, 32);
 
+  private final static Point SCORE_BOARD_ORIGIN = new Point(0, 112);
+
 
   Bitmap[] play1 = new Bitmap[Direction.values().length];
   Bitmap[] tank1 = new Bitmap[Direction.values().length];
@@ -48,6 +50,8 @@ public class TankWarImage {
   Bitmap[] tankStart = new Bitmap[7];
   Bitmap[] shield = new Bitmap[2];
 
+  Bitmap[] playerLife = new Bitmap[2];
+
   Bitmap[] score = new Bitmap[Score.ScoreNumber.values().length];
 
   Bitmap[] images = new Bitmap[ImageType.values().length];
@@ -56,6 +60,10 @@ public class TankWarImage {
   Bitmap wallLeftChip = null;
   Bitmap wallRightChip = null;
   Bitmap wallBottomChip = null;
+
+  Bitmap npcLife = null;
+
+  Bitmap level = null;
 
   public TankWarImage(Resources resources) {
     BitmapFactory.Options myOptions = new BitmapFactory.Options();
@@ -91,6 +99,28 @@ public class TankWarImage {
 
     initShield(bitmap);
 
+    initPlayerLife(bitmap);
+
+    initLevel(bitmap);
+
+    initNpcLife(bitmap);
+
+  }
+
+  private void initNpcLife(Bitmap bitmap) {
+    npcLife = Bitmap.createBitmap(bitmap, SCORE_BOARD_ORIGIN.x + 92, SCORE_BOARD_ORIGIN.y, 14, 14);
+  }
+
+  private void initLevel(Bitmap bitmap) {
+    level = Bitmap.createBitmap(bitmap, SCORE_BOARD_ORIGIN.x + 60, SCORE_BOARD_ORIGIN.y, 30, 32);
+  }
+
+  private void initPlayerLife(Bitmap bitmap) {
+    for (int i = 0; i < playerLife.length; i++) {
+      playerLife[i] =
+          Bitmap
+              .createBitmap(bitmap, 30 * i + SCORE_BOARD_ORIGIN.x, SCORE_BOARD_ORIGIN.y, 30, 32);
+    }
   }
 
   private void initShield(Bitmap bitmap) {

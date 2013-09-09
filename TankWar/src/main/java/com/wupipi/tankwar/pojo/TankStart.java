@@ -1,26 +1,26 @@
 package com.wupipi.tankwar.pojo;
 
+import java.util.Random;
+
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 
-import java.util.Random;
-
 /**
  * Created by xudong on 7/25/13.
  */
-public class TankStart extends  Movable {
+public class TankStart extends Movable {
 
+  private final Tank tank;
   private int frame = 0;
   private int time = 0;
   private int num = 0;
   private Battle battle;
 
-  private Random random = new Random();
-
-  public TankStart(Battle battle, Point point) {
+  public TankStart(Battle battle, Tank tank) {
     this.battle = battle;
-    this.position = new Point(point.x, point.y);
+    this.tank = tank;
+    this.position = tank.position;
   }
 
   @Override
@@ -45,40 +45,16 @@ public class TankStart extends  Movable {
       frame++;
     }
     if (frame > 6) {
-      num ++;
+      num++;
       frame = 0;
     }
 
-    if(num >= 3) {
+    if (num >= 3) {
       battle.tankStarts.remove(this);
-      int type = random.nextInt(3);
-      Tank tank = null;
-
-      boolean carryFood = random.nextInt(5) >= 2;
-
-
-      switch (type) {
-        case 0: {
-          tank = new Tank(battle, position, Ally.NPC, TankType.NPC1, carryFood);
-          tank.head(Direction.SOUTH);
-          break;
-        }
-        case 1: {
-          tank = new Tank(battle, position, Ally.NPC, TankType.NPC2, carryFood);
-          tank.head(Direction.SOUTH);
-          break;
-        }
-        case 2: {
-          tank = new Tank(battle, position, Ally.NPC, TankType.NPC3, carryFood);
-          tank.head(Direction.SOUTH);
-          break;
-        }
-      }
-
-      battle.getTanks(Ally.NPC).add(tank);
+      battle.getTanks(tank.getAlly()).add(tank);
     }
 
-    time ++;
+    time++;
 
   }
 

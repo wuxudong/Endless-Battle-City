@@ -39,18 +39,21 @@ public class Tank extends Movable {
 
   private boolean carryFood = false;
 
+  private Player player;
+
   /**
    * Current direction the tank is headed.
    */
   protected Direction direction = Direction.NORTH;
   private Direction nextDirection = Direction.NORTH;
 
-  public Tank(Battle battle, Point position, Ally ally, TankType tankType, boolean carryFood) {
+  public Tank(Battle battle, Point position, Ally ally, TankType tankType, boolean carryFood, Player player) {
     this.battle = battle;
     this.position = position;
     this.ally = ally;
     this.tankType = tankType;
     this.carryFood = carryFood;
+    this.player = player;
   }
 
   @Override
@@ -256,9 +259,9 @@ public class Tank extends Movable {
     }
   }
 
-  public void beGod() {
+  public void beGod(int time) {
     god = true;
-    godTime = 600;
+    godTime = time;
   }
 
   public boolean isGod() {
@@ -357,5 +360,9 @@ public class Tank extends Movable {
 
   public boolean isCarryFood() {
     return carryFood;
+  }
+
+  public Player getPlayer() {
+    return player;
   }
 }

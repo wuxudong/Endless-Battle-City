@@ -23,6 +23,10 @@ public class Battle {
   public int mMode = WorkThread.RUNNING;
   public Tank playerTank;
 
+  public Player[] players = new Player[] {new Player(3, Ally.PLAYER)};
+
+  public Player npcPlayer = new Player(20, Ally.NPC);
+
   private List<Tank> playerTanks = new CopyOnWriteArrayList<Tank>();
 
   private List<Tank> npcTanks = new CopyOnWriteArrayList<Tank>();
@@ -52,17 +56,21 @@ public class Battle {
 
   public Battle() {
 
-    playerTank = new Tank(this, new Point(9 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false);
+    playerTank =
+        new Tank(this, new Point(8 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false, players[0]);
+    playerTank.beGod(300);
     playerTanks.add(playerTank);
 
+    npcPlayer.life = 20;
 
-    Tank tank1 = new Tank(this, new Point(0, 0), Ally.NPC, TankType.NPC1, false);
+
+    Tank tank1 = new Tank(this, new Point(0, 0), Ally.NPC, TankType.NPC1, false, npcPlayer);
     npcTanks.add(tank1);
 
-    Tank tank2 = new Tank(this, new Point(182, 0), Ally.NPC, TankType.NPC2, false);
+    Tank tank2 = new Tank(this, new Point(182, 0), Ally.NPC, TankType.NPC2, false, npcPlayer);
     npcTanks.add(tank2);
 
-    Tank tank3 = new Tank(this, new Point(384, 0), Ally.NPC, TankType.NPC3, false);
+    Tank tank3 = new Tank(this, new Point(384, 0), Ally.NPC, TankType.NPC3, false, npcPlayer);
     npcTanks.add(tank3);
   }
 
@@ -113,7 +121,10 @@ public class Battle {
     }
 
 
-    moreTankStart();
+    if (npcPlayer.life > 0) {
+
+      moreTankStart();
+    }
 
     if (homeGodTime > 0) {
       homeGodTime--;
@@ -126,8 +137,8 @@ public class Battle {
 
   public void moreFood() {
 
-    int x = random.nextInt((Const.TILE_COUNT - 1) * Const.OFFSET_PER_TILE);
-    int y = random.nextInt((Const.TILE_COUNT - 1) * Const.OFFSET_PER_TILE);
+    int x = random.nextInt((Const.TILE_COUNT - 2) * Const.OFFSET_PER_TILE);
+    int y = random.nextInt((Const.TILE_COUNT - 2) * Const.OFFSET_PER_TILE);
 
     int index = random.nextInt(FoodType.values().length);
     FoodType type = FoodType.values()[index];
@@ -137,19 +148,44 @@ public class Battle {
   }
 
   private void moreTankStart() {
+
     if (frame % 250 == 0 && npcTanks.size() < 10) {
+      npcPlayer.life --;
       int where = random.nextInt(3);
-      switch (where) {
+
+      int type = random.nextInt(3);
+
+      boolean carryFood = random.nextInt(2) == 0;
+      TankType tankType = null;
+      switch (type) {
         case 0: {
-          tankStarts.add(new TankStart(this, new Point(192, 0)));
+          tankType = TankType.NPC1;
           break;
         }
         case 1: {
-          tankStarts.add(new TankStart(this, new Point(0, 0)));
+          tankType = TankType.NPC2;
           break;
         }
         case 2: {
-          tankStarts.add(new TankStart(this, new Point(384, 0)));
+          tankType = TankType.NPC3;
+          break;
+        }
+      }
+
+      switch (where) {
+        case 0: {
+          Tank tank = new Tank(this, new Point(192, 0), Ally.NPC, tankType, carryFood, npcPlayer);
+          tankStarts.add(new TankStart(this, tank));
+          break;
+        }
+        case 1: {
+          Tank tank = new Tank(this, new Point(0, 0), Ally.NPC, tankType, carryFood, npcPlayer);
+          tankStarts.add(new TankStart(this, tank));
+          break;
+        }
+        case 2: {
+          Tank tank = new Tank(this, new Point(384, 0), Ally.NPC, tankType, carryFood, npcPlayer);
+          tankStarts.add(new TankStart(this, tank));
           break;
         }
       }
@@ -241,5 +277,24 @@ public class Battle {
 
   public void stopNpc() {
     stopNpcTime = 500;
+  }
+
+  public boolean born(Player player) {
+    if (player.life > 0) {
+      player.life--;
+
+      if (player.getAlly() == Ally.PLAYER && player == players[0]) {
+
+        playerTank =
+            new Tank(this, new Point(8 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false,
+                players[0]);
+        playerTank.beGod(300);
+
+        tankStarts.add(new TankStart(this, playerTank));
+        return true;
+      }
+    }
+    return false;
+
   }
 }

@@ -17,7 +17,7 @@ public class WorkThread extends Thread {
 
   private final Battle battle;
 
-
+  private final ScoreBoard scoreBoard;
   public static final int PAUSE = 0;
   public static final int READY = 1;
   public static final int RUNNING = 2;
@@ -72,6 +72,8 @@ public class WorkThread extends Thread {
     tankWarImage = new TankWarImage(view.getResources());
     battle = new Battle();
     battle.gameMap = new MapLevel().getGameMap(3);
+
+    scoreBoard = new ScoreBoard(battle);
   }
 
   public void startThread()
@@ -95,19 +97,29 @@ public class WorkThread extends Thread {
       long start = System.currentTimeMillis();
       try {
 
+        battle.update();
+
         canvas = tankWarView.getHolder().lockCanvas();
 
-        float sx = (float)canvas.getWidth() / (float)512;
+        canvas.drawColor(Color.GRAY);
 
-        float sy =
-            (float) canvas.getHeight()
-                / (float) 448;
+        float sx = (float) canvas.getWidth() / (float) 512;
 
+        float sy = (float) canvas.getHeight() / (float) 448;
 
         canvas.scale(sx, sy);
 
-        battle.update();
 
+        scoreBoard.draw(canvas, mPaint, tankWarImage);
+
+
+
+        canvas.translate(32, 16);
+
+
+
+        canvas.clipRect(0, 0, Const.OFFSET_PER_TILE * Const.TILE_COUNT, Const.OFFSET_PER_TILE
+            * Const.TILE_COUNT);
         canvas.drawColor(Color.BLACK);
         for (Ally ally : Ally.values()) {
 
@@ -149,7 +161,7 @@ public class WorkThread extends Thread {
           hit.draw(canvas, mPaint, tankWarImage);
         }
 
-        if(battle.getFood() != null) {
+        if (battle.getFood() != null) {
           battle.getFood().draw(canvas, mPaint, tankWarImage);
         }
 

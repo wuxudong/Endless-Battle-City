@@ -183,6 +183,10 @@ public class Bullet extends Movable {
               battle.moreFood();
             }
 
+            if(object.getPlayer().getAlly() == Ally.PLAYER) {
+              battle.born(object.getPlayer());
+            }
+
             battle.bombs.add(new Bomb(battle, object.position, object.scoreNumber()));
           }
           Log.d("Tank_War", "hit " + object);

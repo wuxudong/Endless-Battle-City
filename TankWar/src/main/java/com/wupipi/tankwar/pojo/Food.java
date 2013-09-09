@@ -37,24 +37,23 @@ public class Food extends Movable {
       battle.setFood(null);
     }
 
-    for (Tank player : battle.getTanks(Ally.PLAYER)) {
-      if (Rect.intersects(player.getRect(), getRect())) {
+    for (Tank playerTank : battle.getTanks(Ally.PLAYER)) {
+      if (Rect.intersects(playerTank.getRect(), getRect())) {
 
         switch (foodType)
         {
           case LIFE:
-            // player.live ++;
-            // scoreBoard.drawPlayerLife(tanks[i].name,tanks[i].live);
+            playerTank.getPlayer().life ++;
             break;
           case GOD: {
-            player.beGod();
+            playerTank.beGod(600);
             break;
           }
           case HOME:
             battle.protectHome(true);
             break;
           case STAR:
-            player.star();
+            playerTank.star();
             break;
           case TIME:
             battle.stopNpc();
