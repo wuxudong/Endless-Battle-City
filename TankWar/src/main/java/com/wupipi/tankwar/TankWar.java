@@ -44,7 +44,7 @@ public class TankWar extends Activity {
             direction |= (x > 1 - y) ? 2 : 0;
 
             // Direction is same as the quadrant which was clicked
-            tankWarView.thread.moveTank(direction);
+            tankWarView.thread.scene.actPlayerMove(direction);
 
             return true;
           }
@@ -60,13 +60,13 @@ public class TankWar extends Activity {
             direction |= (x > 1 - y) ? 2 : 0;
 
             // Direction is same as the quadrant which was clicked
-            tankWarView.thread.moveTank(direction);
+            tankWarView.thread.scene.actPlayerMove(direction);
 
             return true;
           }
 
           case MotionEvent.ACTION_UP: {
-            tankWarView.thread.moveTank(4);
+            tankWarView.thread.scene.actPlayerMove(Const.MOVE_NONE);
 
             return true;
 
@@ -87,13 +87,13 @@ public class TankWar extends Activity {
         switch (event.getAction()) {
           case MotionEvent.ACTION_DOWN: {
 
-            tankWarView.thread.fire(true);
+            tankWarView.thread.scene.actPlayerFire(true);
 
             return true;
           }
 
           case MotionEvent.ACTION_UP: {
-            tankWarView.thread.fire(false);
+            tankWarView.thread.scene.actPlayerFire(false);
             return true;
           }
         }
