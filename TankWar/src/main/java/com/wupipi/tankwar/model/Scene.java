@@ -2,18 +2,31 @@ package com.wupipi.tankwar.model;
 
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.wupipi.tankwar.Const;
 import com.wupipi.tankwar.Direction;
 import com.wupipi.tankwar.FoodType;
 import com.wupipi.tankwar.WorkThread;
 
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OptionalDataException;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Created by xudong on 7/26/13.
  */
-public class Scene {
+public class Scene implements Serializable{
 
     public long frame = 0;
 
@@ -191,7 +204,6 @@ public class Scene {
 
                         } else if (obstacle instanceof Grid) {
                             hit = true;
-
 
                             frameActions.add(new FrameAction() {
                                 @Override
@@ -615,5 +627,40 @@ public class Scene {
 
     public GameMap getGameMap() {
         return gameMap;
+    }
+
+    public static void dump(Scene scene) {
+        File dir = new File("/sdcard/TankWar");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        File file = new File(dir, "dump");
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
+            out.writeObject(scene);
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Scene restore()  {
+        File dir = new File("/sdcard/TankWar");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        File file = new File(dir, "dump");
+        try {
+            ObjectInputStream input = new ObjectInputStream(new FileInputStream(file));
+            Scene scene = (Scene) input.readObject();
+            input.close();
+
+            return scene;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

@@ -17,7 +17,7 @@ public class WorkThread extends Thread {
 
     private TankWarView tankWarView;
 
-    final Scene scene;
+    Scene scene;
 
     private final ScoreBoard scoreBoard;
     public static final int PAUSE = 0;
@@ -31,7 +31,12 @@ public class WorkThread extends Thread {
 
     public WorkThread(TankWarView view) {
         tankWarView = view;
-        scene = new Scene();
+
+        scene = Scene.restore();
+
+        if (scene == null) {
+            scene = new Scene();
+        }
         scene.setGameMap(new MapLevel().getGameMap(3));
 
         scoreBoard = new ScoreBoard();

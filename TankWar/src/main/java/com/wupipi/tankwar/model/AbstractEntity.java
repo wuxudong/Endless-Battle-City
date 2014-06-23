@@ -5,10 +5,12 @@ import android.graphics.Rect;
 
 import com.wupipi.tankwar.Const;
 
+import java.io.Serializable;
+
 /**
  * Created by xudong on 1/25/14.
  */
-public abstract class AbstractEntity implements Drawable {
+public abstract class AbstractEntity implements Drawable, Serializable {
 
 
     protected Point position;
