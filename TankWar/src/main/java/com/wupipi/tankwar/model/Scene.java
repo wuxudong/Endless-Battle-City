@@ -26,7 +26,7 @@ import java.util.*;
 /**
  * Created by xudong on 7/26/13.
  */
-public class Scene implements Serializable{
+public class Scene implements Serializable {
 
     public long frame = 0;
 
@@ -90,7 +90,11 @@ public class Scene implements Serializable{
     public void nextFrame() {
         frame++;
 
-        tankTiles = new Obstacle[Const.TILE_COUNT][Const.TILE_COUNT];
+        for(int row = 0; row <  tankTiles.length; row ++) {
+            for (int col = 0; col < tankTiles[row].length; col ++) {
+                tankTiles[row][col] = null;
+            }
+        }
 
         for (Tank tank : playerTanks) {
             for (Tile tile : Tile.getCrossedTiles(tank.getRect())) {
@@ -106,7 +110,11 @@ public class Scene implements Serializable{
             }
         }
 
-        playerBulletTiles = new Bullet[Const.TILE_COUNT][Const.TILE_COUNT];
+        for(int row = 0; row <  playerBulletTiles .length; row ++) {
+            for (int col = 0; col < playerBulletTiles [row].length; col ++) {
+                playerBulletTiles [row][col] = null;
+            }
+        }
 
         for (Bullet bullet : bullets) {
             if (bullet.getOwner().getAlly() == Ally.PLAYER) {
@@ -466,35 +474,32 @@ public class Scene implements Serializable{
 
     }
 
-    public void actPlayerMove(int direction) {
+    public void actPlayerMove(Direction direction) {
+        switch (direction) {
+            case NORTH:
+                playerTank.head(Direction.NORTH);
+                playerTank.setMove(true);
+                break;
 
-        if (direction == Const.MOVE_UP) {
-            playerTank.head(Direction.NORTH);
-            playerTank.setMove(true);
-            return;
-        }
+            case SOUTH:
+                playerTank.head(Direction.SOUTH);
+                playerTank.setMove(true);
+                break;
 
-        if (direction == Const.MOVE_DOWN) {
-            playerTank.head(Direction.SOUTH);
-            playerTank.setMove(true);
-            return;
-        }
+            case WEST:
+                playerTank.head(Direction.WEST);
+                playerTank.setMove(true);
+                break;
 
-        if (direction == Const.MOVE_LEFT) {
-            playerTank.head(Direction.WEST);
-            playerTank.setMove(true);
-            return;
-        }
+            case EAST:
+                playerTank.head(Direction.EAST);
+                playerTank.setMove(true);
 
-        if (direction == Const.MOVE_RIGHT) {
-            playerTank.head(Direction.EAST);
-            playerTank.setMove(true);
-            return;
-        }
+                break;
+            case NONE:
+                playerTank.setMove(false);
+                break;
 
-        if (direction == Const.MOVE_NONE) {
-            playerTank.setMove(false);
-            return;
         }
     }
 
@@ -645,7 +650,7 @@ public class Scene implements Serializable{
         }
     }
 
-    public static Scene restore()  {
+    public static Scene restore() {
         File dir = new File("/sdcard/TankWar");
         if (!dir.exists()) {
             dir.mkdirs();

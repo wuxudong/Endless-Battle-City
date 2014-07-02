@@ -8,7 +8,7 @@ public class TankWar extends Activity {
 
   private TankWarView mTankWarView;
 
-  private View controlContainer;
+  private JoystickView joystickView;
 
   private View fireContainer;
 
@@ -21,62 +21,18 @@ public class TankWar extends Activity {
 
     setContentView(R.layout.activity_main);
     final TankWarView tankWarView = mTankWarView = (TankWarView) findViewById(R.id.map);
-    findViewById(R.id.arrowContainer).setVisibility(View.VISIBLE);
 
-    controlContainer = findViewById(R.id.controlContainer);
+    joystickView = (JoystickView) findViewById(R.id.joystick);
 
 
-    controlContainer.setOnTouchListener(new View.OnTouchListener() {
-
-      @Override
-      public boolean onTouch(View v, MotionEvent event) {
-
-        switch (event.getAction()) {
-          case MotionEvent.ACTION_DOWN: {
-
-            // Normalize x,y between 0 and 1
-            float x = event.getX() / v.getWidth();
-            float y = event.getY() / v.getHeight();
-
-            // Direction will be [0,1,2,3] depending on quadrant
-            int direction = 0;
-            direction = (x > y) ? 1 : 0;
-            direction |= (x > 1 - y) ? 2 : 0;
-
-            // Direction is same as the quadrant which was clicked
+    joystickView.setOnJoystickMoveListener(new JoystickView.OnJoystickMoveListener() {
+        @Override
+        public void onValueChanged(Direction direction) {
             tankWarView.thread.scene.actPlayerMove(direction);
-
-            return true;
-          }
-          case MotionEvent.ACTION_MOVE: {
-
-            // Normalize x,y between 0 and 1
-            float x = event.getX() / v.getWidth();
-            float y = event.getY() / v.getHeight();
-
-            // Direction will be [0,1,2,3] depending on quadrant
-            int direction = 0;
-            direction = (x > y) ? 1 : 0;
-            direction |= (x > 1 - y) ? 2 : 0;
-
-            // Direction is same as the quadrant which was clicked
-            tankWarView.thread.scene.actPlayerMove(direction);
-
-            return true;
-          }
-
-          case MotionEvent.ACTION_UP: {
-            tankWarView.thread.scene.actPlayerMove(Const.MOVE_NONE);
-
-            return true;
-
-          }
         }
-        return false;
-      }
+    } );
 
 
-    });
 
     fireContainer = findViewById(R.id.fireContainer);
     fireContainer.setOnTouchListener(new View.OnTouchListener() {
