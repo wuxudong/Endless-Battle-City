@@ -8,7 +8,7 @@ import com.wupipi.tankwar.Const;
 /**
  * Created by xudong on 8/2/13.
  */
-public class MapLevel {
+public class GameLevel {
   private List<int[][]> levels = new ArrayList<int[][]>();
   public static final int[][] LEVEL_0 = new int[][] {
       {0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -123,7 +123,7 @@ public class MapLevel {
       {2, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1, 8, 8, 1, 0, 0, 0, 0, 0, 3, 3, 3, 3, 2, 0},
   };
 
-  public MapLevel() {
+  public GameLevel() {
 
 
     levels.add(LEVEL_0);
@@ -142,34 +142,31 @@ public class MapLevel {
   private static final int HOME = 9;
   private static final int HOME_PLACEHOLDER = 8;
 
-  public GameMap getGameMap(int level) {
+  public BattleField getBattleField(int level) {
     int[][] levelMap = levels.get(level);
-    GameMap gameMap = new GameMap();
+    BattleField battleField = new BattleField();
 
     for (int i = 0; i < Const.TILE_COUNT; i++) {
       for (int j = 0; j < Const.TILE_COUNT; j++) {
         switch (levelMap[i][j]) {
           case WALL: {
-            gameMap.setWall(i, j);
+            battleField.setWall(i, j);
             break;
           }
           case GRID: {
-            gameMap.setGrid(i, j);
+            battleField.setGrid(i, j);
             break;
           }
           case GRASS: {
-            gameMap.setGrass(i, j);
+            battleField.setGrass(i, j);
             break;
           }
           case WATER: {
-            gameMap.setWater(i, j);
+            battleField.setWater(i, j);
             break;
           }
-          case 5:
-            // TODO:
-            break;
           case HOME: {
-            gameMap.setHome(i, j);
+            battleField.setHome(i, j);
             break;
           }
 
@@ -177,11 +174,9 @@ public class MapLevel {
             // ignore home placeholder
             break;
           }
-
-
         }
       }
     }
-    return gameMap;
+    return battleField;
   }
 }

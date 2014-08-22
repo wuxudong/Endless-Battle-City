@@ -1,6 +1,6 @@
 package com.wupipi.tankwar.model;
 
-import com.wupipi.tankwar.model.Ally;
+import com.wupipi.tankwar.Ally;
 
 /**
  * Created by xudong on 8/10/13.

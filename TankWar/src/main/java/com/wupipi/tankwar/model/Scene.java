@@ -1,104 +1,107 @@
 package com.wupipi.tankwar.model;
 
 import android.graphics.Point;
-import android.graphics.Rect;
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.util.Log;
 
+import com.google.common.collect.Iterables;
+import com.google.gson.annotations.Expose;
+import com.wupipi.tankwar.Ally;
 import com.wupipi.tankwar.Const;
 import com.wupipi.tankwar.Direction;
 import com.wupipi.tankwar.FoodType;
+import com.wupipi.tankwar.FrameAction;
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.WorkThread;
 
-import org.json.JSONObject;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OptionalDataException;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Created by xudong on 7/26/13.
  */
-public class Scene implements Serializable {
+public class Scene {
 
     public long frame = 0;
 
     private Random random = new Random();
 
-    List<FrameAction> frameActions = new ArrayList<FrameAction>();
+    private List<FrameAction> frameActions = new ArrayList<FrameAction>();
 
     /**
-     * Current mode of application: READY to run, RUNNING, or you have already lost. static final
-     * ints are used instead of an enum for performance reasons.
+     * Current mode of application: READY to run, RUNNING, or you have already lost.
+     * static final ints are used instead of an enum for performance reasons.
      */
-    public int mMode = WorkThread.RUNNING;
+    public volatile int mMode = WorkThread.RUNNING;
 
     private Tank playerTank;
 
-    Player player = new Player(3, Ally.PLAYER);
+    private Player player = new Player(1, Ally.PLAYER);
 
-    Player npcPlayer;
-
-    private Set<Tank> playerTanks = new HashSet<Tank>();
+    private Player npcPlayer = new Player(Integer.MAX_VALUE, Ally.NPC);
 
     private Set<Tank> npcTanks = new HashSet<Tank>();
 
     private Set<Bullet> bullets = new HashSet<Bullet>();
 
-    private Set<Animation> animations = new HashSet<Animation>();
+    private Set<Explosion> explosions = new HashSet<Explosion>();
+
+    private Set<Hit> hits = new HashSet<Hit>();
+
+    private Set<TankBirth> tankBirths = new HashSet<TankBirth>();
+
+    private Set<Score> scores = new HashSet<Score>();
 
     private Food food = null;
 
-    private GameMap gameMap;
+    private BattleField battleField;
 
-    private int homeGodTime = 0;
+    private Tank[][] tankTiles = new Tank[Const.TILE_COUNT][Const.TILE_COUNT];
 
-    private Obstacle[][] tankTiles = new Obstacle[Const.TILE_COUNT][Const.TILE_COUNT];
-
-    private Bullet[][] playerBulletTiles = new Bullet[Const.TILE_COUNT][Const.TILE_COUNT];
+    private Bullet[][] bulletTiles = new Bullet[Const.TILE_COUNT][Const.TILE_COUNT];
 
     private RandomTankAI npcAI = new RandomTankAI();
 
-    private int stopNpcTime;
+    private int homeGodTime = 0;
+
+    private int stopNpcTime = 0;
+
+    private int highestScore = 0;
+
+    private int score = 0;
+
+    private boolean lose = false;
+
+    private transient SceneManager sceneManager;
+
+    private RestartAction restart;
 
     public Scene() {
 
-        playerTank =
-                new Tank(new Point(8 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false, player);
-        playerTank.beGod(300);
-        playerTanks.add(playerTank);
+        delayedPlayerBorn();
 
-        npcPlayer = new Player(20, Ally.NPC);
+        delayedNpcBorn();
 
-        Tank tank1 = new Tank(new Point(0, 0), Ally.NPC, TankType.NPC1, false, npcPlayer);
-        npcTanks.add(tank1);
-
-        Tank tank2 = new Tank(new Point(182, 0), Ally.NPC, TankType.NPC2, false, npcPlayer);
-        npcTanks.add(tank2);
-
-        Tank tank3 = new Tank(new Point(384, 0), Ally.NPC, TankType.NPC3, false, npcPlayer);
-        npcTanks.add(tank3);
+        // default game level 1
+        setBattleField(new GameLevel().getBattleField(1));
     }
 
     public void nextFrame() {
         frame++;
 
-        for(int row = 0; row <  tankTiles.length; row ++) {
-            for (int col = 0; col < tankTiles[row].length; col ++) {
+        for (int row = 0; row < tankTiles.length; row++) {
+            for (int col = 0; col < tankTiles[row].length; col++) {
                 tankTiles[row][col] = null;
             }
         }
 
-        for (Tank tank : playerTanks) {
-            for (Tile tile : Tile.getCrossedTiles(tank.getRect())) {
-                tankTiles[tile.row][tile.col] = tank;
+        if (playerTank != null) {
+            for (Tile tile : Tile.getCrossedTiles(playerTank.getRect())) {
+                tankTiles[tile.row][tile.col] = playerTank;
             }
         }
 
@@ -110,16 +113,16 @@ public class Scene implements Serializable {
             }
         }
 
-        for(int row = 0; row <  playerBulletTiles .length; row ++) {
-            for (int col = 0; col < playerBulletTiles [row].length; col ++) {
-                playerBulletTiles [row][col] = null;
+        for (int row = 0; row < bulletTiles.length; row++) {
+            for (int col = 0; col < bulletTiles[row].length; col++) {
+                bulletTiles[row][col] = null;
             }
         }
 
         for (Bullet bullet : bullets) {
             if (bullet.getOwner().getAlly() == Ally.PLAYER) {
                 for (Tile tile : Tile.getCrossedTiles(bullet.getRect())) {
-                    playerBulletTiles[tile.row][tile.col] = bullet;
+                    bulletTiles[tile.row][tile.col] = bullet;
                 }
             }
         }
@@ -132,26 +135,39 @@ public class Scene implements Serializable {
             }
         }
 
-
-        for (Tank t : playerTanks) {
-            t.nextFrame(this);
+        if (playerTank != null) {
+            playerTank.nextFrame(this);
         }
 
         for (Bullet b : bullets) {
             b.nextFrame(this);
         }
 
-        for (Animation obj : animations) {
-            obj.nextFrame(this);
+        for (Explosion e : explosions) {
+            e.nextFrame(this);
         }
+
+        for (Hit h : hits) {
+            h.nextFrame(this);
+        }
+
+        for (Score s : scores) {
+            s.nextFrame(this);
+        }
+
+        for (TankBirth b : tankBirths) {
+            b.nextFrame(this);
+        }
+
 
         if (food != null) {
             food.nextFrame(this);
         }
 
         if (npcPlayer.life > 0) {
-            delayedTankStart();
+            delayedNpcBorn();
         }
+
 
         if (homeGodTime > 0) {
             homeGodTime--;
@@ -168,17 +184,23 @@ public class Scene implements Serializable {
 
 
         frameActions.clear();
+
+        if (restart != null) {
+            restart.nextFrame(this);
+        }
     }
 
     private void collision() {
+
+        Set shotTanks = new HashSet<Tank>();
         for (final Bullet bullet : bullets) {
+
+            shotTanks.clear();
 
             boolean hit = false;
             for (final Tile tile : Tile.getCrossedTiles(bullet.getRect())) {
                 for (Obstacle obstacle : getObstacles(tile)) {
-                    if (obstacle == bullet) {
-                        continue;
-                    } else if (!obstacle.isCollidable()) {
+                    if (!obstacle.isBlock()) {
                         continue;
                     } else if (obstacle.getRect().intersect(bullet.getRect())) {
                         if (obstacle instanceof Wall) {
@@ -189,23 +211,23 @@ public class Scene implements Serializable {
                                 public void run() {
                                     switch (bullet.getDirection()) {
                                         case NORTH: {
-                                            gameMap.setWallTopChip(tile.row, tile.col);
+                                            battleField.setWallTopChip(tile.row, tile.col);
                                             break;
                                         }
                                         case SOUTH: {
-                                            gameMap.setWallBottomChip(tile.row, tile.col);
+                                            battleField.setWallBottomChip(tile.row, tile.col);
                                             break;
                                         }
                                         case WEST: {
-                                            gameMap.setWallLeftChip(tile.row, tile.col);
+                                            battleField.setWallLeftChip(tile.row, tile.col);
                                             break;
                                         }
                                         case EAST: {
-                                            gameMap.setWallRightChip(tile.row, tile.col);
+                                            battleField.setWallRightChip(tile.row, tile.col);
                                             break;
                                         }
                                     }
-                                    animations.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
+                                    hits.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
                                 }
                             });
 
@@ -217,10 +239,10 @@ public class Scene implements Serializable {
                                 @Override
                                 public void run() {
                                     if (bullet.getPower() >= 2) {
-                                        gameMap.clear(tile.row, tile.col);
+                                        battleField.clear(tile.row, tile.col);
                                     }
 
-                                    animations.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
+                                    hits.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
                                 }
                             });
                         } else if (obstacle instanceof WallTopChip || obstacle instanceof WallBottomChip || obstacle instanceof WallLeftChip || obstacle instanceof WallRightChip) {
@@ -228,34 +250,45 @@ public class Scene implements Serializable {
                             frameActions.add(new FrameAction() {
                                 @Override
                                 public void run() {
-                                    gameMap.clear(tile.row, tile.col);
-                                    animations.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
+                                    battleField.clear(tile.row, tile.col);
+                                    hits.add(new Hit(new Point(bullet.getRect().centerX(), bullet.getRect().centerY())));
                                 }
                             });
                         } else if (obstacle instanceof Tank) {
                             final Tank t = (Tank) obstacle;
 
-                            if (t.isValid()) {
-                                if (bullet.getOwner().getAlly() == t.getAlly()) {
-                                    // not collide
-                                } else {
+                            if (!shotTanks.contains(t)) {
+
+                                shotTanks.add(t);
+
+                                if (bullet.getOwner().getAlly() != t.getAlly()) {
                                     hit = true;
 
                                     if (!t.isGod()) {
                                         t.setHealth(t.getHealth() - 1);
 
                                         if (t.getHealth() <= 0) {
-                                            t.setValid(false);
                                             delayedDestroyTank(t);
 
                                             if (t.getAlly() == Ally.PLAYER) {
-                                                delayedBorn(t.getPlayer());
+                                                if (!delayedPlayerBorn()) {
+                                                    lose = true;
+                                                    restart = new RestartAction();
+                                                }
+                                            } else {
+                                                if (t.scoreNumber() != null) {
+
+                                                    score += t.scoreNumber().getValue();
+                                                    if (score > highestScore) {
+                                                        highestScore = score;
+                                                    }
+                                                }
                                             }
 
                                             frameActions.add(new FrameAction() {
                                                 @Override
                                                 public void run() {
-                                                    animations.add(new Bomb(t.position, t.scoreNumber()));
+                                                    explosions.add(new Explosion(t.position, t.scoreNumber()));
 
                                                 }
                                             });
@@ -266,16 +299,35 @@ public class Scene implements Serializable {
                         } else if (obstacle instanceof Home) {
                             hit = true;
                             ((Home) obstacle).setDestroyed(true);
+                            if (playerTank != null) {
+
+                                final Tank pTank = playerTank;
+                                delayedDestroyTank(playerTank);
+                                frameActions.add(new FrameAction() {
+                                    @Override
+                                    public void run() {
+                                        explosions.add(new Explosion(pTank.position, pTank.scoreNumber()));
+                                    }
+                                });
+                            }
+
+                            if (!lose) {
+
+                                lose = true;
+
+                                restart = new RestartAction();
+                            }
+
 
                         }
 
                     }
                 }
 
-                if (bullet.getOwner().getAlly() == Ally.NPC && playerBulletTiles[tile.row][tile.col] != null) {
-                    if (bullet.getRect().intersect(playerBulletTiles[tile.row][tile.col].getRect())) {
+                if (bullet.getOwner().getAlly() == Ally.NPC && bulletTiles[tile.row][tile.col] != null) {
+                    if (bullet.getRect().intersect(bulletTiles[tile.row][tile.col].getRect())) {
                         hit = true;
-                        delayedDestroyBullet(playerBulletTiles[tile.row][tile.col]);
+                        delayedDestroyBullet(bulletTiles[tile.row][tile.col]);
                     }
                 }
 
@@ -292,7 +344,7 @@ public class Scene implements Serializable {
             for (final Tile tile : Tile.getCrossedTiles(food.getRect())) {
                 for (Obstacle obstacle : getObstacles(tile)) {
                     if (obstacle instanceof Tank) {
-                        if (((Tank) obstacle).getAlly() == Ally.PLAYER) {
+                        if (obstacle == playerTank) {
                             consume = true;
                             switch (food.getFoodType()) {
                                 case LIFE:
@@ -304,10 +356,10 @@ public class Scene implements Serializable {
                                 case HOME:
                                     delayedProtectHome(true);
                                     break;
-                                case STAR:
+                                case PROMOTION:
                                     playerTank.promote();
                                     break;
-                                case TIME:
+                                case FREEZE:
                                     stopNpc();
                                     break;
                                 case BOMB:
@@ -330,6 +382,32 @@ public class Scene implements Serializable {
             }
         }
 
+        sceneManager.getScoreListener().onScoreChange(highestScore, score);
+
+    }
+
+
+    class RestartAction implements FrameAware {
+        private int delay = 100;
+
+
+        @Override
+        public void nextFrame(Scene scene) {
+            delay--;
+
+            if (delay < 0) {
+                restart();
+            }
+        }
+
+        private void restart() {
+
+            Scene scene = new Scene();
+            scene.setSceneManager(sceneManager);
+
+            scene.highestScore = highestScore;
+            sceneManager.setScene(scene);
+        }
 
     }
 
@@ -344,9 +422,9 @@ public class Scene implements Serializable {
         food = new Food(new Point(x, y), type);
     }
 
-    private void delayedTankStart() {
+    private void delayedNpcBorn() {
 
-        if (frame % 250 == 0 && npcTanks.size() < 10) {
+        if (frame % 50 == 0 && npcTanks.size() < 100) {
             npcPlayer.life--;
             int where = random.nextInt(3);
 
@@ -356,15 +434,15 @@ public class Scene implements Serializable {
             TankType tankType = null;
             switch (type) {
                 case 0: {
-                    tankType = TankType.NPC1;
+                    tankType = TankType.NPC_NORMAL;
                     break;
                 }
                 case 1: {
-                    tankType = TankType.NPC2;
+                    tankType = TankType.TANK_NPC_RACER;
                     break;
                 }
                 case 2: {
-                    tankType = TankType.NPC3;
+                    tankType = TankType.TANK_NPC_ARMOR;
                     break;
                 }
             }
@@ -386,11 +464,11 @@ public class Scene implements Serializable {
                 }
             }
 
-            final TankStart tankStart = new TankStart(tank);
+            final TankBirth tankBirth = new TankBirth(tank);
             frameActions.add(new FrameAction() {
                 @Override
                 public void run() {
-                    animations.add(tankStart);
+                    tankBirths.add(tankBirth);
                 }
             });
         }
@@ -400,8 +478,8 @@ public class Scene implements Serializable {
     public List<Obstacle> getObstacles(Tile tile) {
         List<Obstacle> result = new ArrayList<Obstacle>();
 
-        if (gameMap.get(tile.row, tile.col) != null) {
-            result.add(gameMap.get(tile.row, tile.col));
+        if (battleField.get(tile.row, tile.col) != null) {
+            result.add(battleField.get(tile.row, tile.col));
         }
 
         if (tankTiles[tile.row][tile.col] != null) {
@@ -418,13 +496,13 @@ public class Scene implements Serializable {
 
     public void delayedClearNpc() {
         for (final Tank tank : npcTanks) {
-            final Bomb bomb = new Bomb(tank.position, ScoreNumber.NONE);
+            final Explosion explosion = new Explosion(tank.position, null);
 
             frameActions.add(new FrameAction() {
                 @Override
                 public void run() {
                     npcTanks.remove(tank);
-                    animations.add(bomb);
+                    explosions.add(explosion);
                 }
             });
         }
@@ -438,7 +516,7 @@ public class Scene implements Serializable {
         frameActions.add(new FrameAction() {
             @Override
             public void run() {
-                gameMap.protectHome(god);
+                battleField.protectHome(god);
             }
         });
     }
@@ -447,64 +525,69 @@ public class Scene implements Serializable {
         stopNpcTime = 500;
     }
 
-    public boolean delayedBorn(final Player p) {
-        if (p.life > 0) {
-            p.life--;
+    public boolean delayedPlayerBorn() {
+        if (player.life > 0) {
+            player.life--;
 
-            if (p.getAlly() == Ally.PLAYER) {
+            Tank tank =
+                    new Tank(new Point(8 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false,
+                            player);
+            tank.beGod(30);
 
-                Tank tank =
-                        new Tank(new Point(8 * 16, 24 * 16), Ally.PLAYER, TankType.PLAY1, false,
-                                p);
-                tank.beGod(300);
+            final TankBirth tankBirth = new TankBirth(tank);
 
-                final TankStart tankStart = new TankStart(tank);
+            frameActions.add(new FrameAction() {
+                @Override
+                public void run() {
+                    tankBirths.add(tankBirth);
+                }
+            });
 
-                frameActions.add(new FrameAction() {
-                    @Override
-                    public void run() {
-                        animations.add(tankStart);
-                    }
-                });
-
-                return true;
-            }
+            return true;
         }
+
         return false;
 
     }
 
     public void actPlayerMove(Direction direction) {
-        switch (direction) {
-            case NORTH:
-                playerTank.head(Direction.NORTH);
-                playerTank.setMove(true);
-                break;
+        if (playerTank == null) {
+            return;
+        }
 
-            case SOUTH:
-                playerTank.head(Direction.SOUTH);
-                playerTank.setMove(true);
-                break;
 
-            case WEST:
-                playerTank.head(Direction.WEST);
-                playerTank.setMove(true);
-                break;
+        if (direction == null) {
+            playerTank.setMove(false);
+        } else {
+            switch (direction) {
+                case NORTH:
+                    playerTank.head(Direction.NORTH);
+                    playerTank.setMove(true);
+                    break;
 
-            case EAST:
-                playerTank.head(Direction.EAST);
-                playerTank.setMove(true);
+                case SOUTH:
+                    playerTank.head(Direction.SOUTH);
+                    playerTank.setMove(true);
+                    break;
 
-                break;
-            case NONE:
-                playerTank.setMove(false);
-                break;
+                case WEST:
+                    playerTank.head(Direction.WEST);
+                    playerTank.setMove(true);
+                    break;
 
+                case EAST:
+                    playerTank.head(Direction.EAST);
+                    playerTank.setMove(true);
+                    break;
+
+            }
         }
     }
 
     public void actPlayerFire(boolean b) {
-        playerTank.setFire(b);
+        if (playerTank != null) {
+            playerTank.setFire(b);
+        }
     }
 
     public void delayedTankFires(final Bullet bullet) {
@@ -517,13 +600,13 @@ public class Scene implements Serializable {
 
     }
 
-    public void delayedDestroyBomb(final Bomb bomb) {
+    public void delayedDestroyBomb(final Explosion explosion) {
         frameActions.add(new FrameAction() {
             @Override
             public void run() {
-                Scene.this.animations.remove(bomb);
-                if (bomb.getScoreNumber() != ScoreNumber.NONE) {
-                    Scene.this.animations.add(new Score(new Point(bomb.getRect().centerX(), bomb.getRect().centerY()), bomb.getScoreNumber()));
+                Scene.this.explosions.remove(explosion);
+                if (explosion.getScoreNumber() != null) {
+                    Scene.this.scores.add(new Score(new Point(explosion.getRect().centerX(), explosion.getRect().centerY()), explosion.getScoreNumber()));
                 }
             }
         });
@@ -554,7 +637,7 @@ public class Scene implements Serializable {
         frameActions.add(new FrameAction() {
             @Override
             public void run() {
-                animations.remove(hit);
+                hits.remove(hit);
             }
         });
 
@@ -564,7 +647,7 @@ public class Scene implements Serializable {
         frameActions.add(new FrameAction() {
             @Override
             public void run() {
-                animations.remove(score);
+                scores.remove(score);
             }
         });
 
@@ -579,7 +662,7 @@ public class Scene implements Serializable {
                 }
                 switch (tank.getAlly()) {
                     case PLAYER:
-                        playerTanks.remove(tank);
+                        playerTank = null;
                         break;
                     case NPC:
                         npcTanks.remove(tank);
@@ -591,16 +674,17 @@ public class Scene implements Serializable {
 
     }
 
-    public void destroyTankStart(final TankStart tankStart) {
+    public void destroyTankBirth(final TankBirth tankBirth) {
         frameActions.add(new FrameAction() {
             @Override
             public void run() {
-                animations.remove(tankStart);
-                Tank tank = tankStart.getTank();
+                tankBirths.remove(tankBirth);
+                Tank tank = tankBirth.getTank();
                 switch (tank.getAlly()) {
                     case PLAYER:
-                        playerTank = tank;
-                        playerTanks.add(tank);
+                        if (!lose) {
+                            playerTank = tank;
+                        }
                         break;
                     case NPC:
                         npcTanks.add(tank);
@@ -610,12 +694,8 @@ public class Scene implements Serializable {
         });
     }
 
-    public void setGameMap(GameMap gameMap) {
-        this.gameMap = gameMap;
-    }
-
-    public Set<Tank> getPlayerTanks() {
-        return playerTanks;
+    public void setBattleField(BattleField battleField) {
+        this.battleField = battleField;
     }
 
     public Set<Tank> getNpcTanks() {
@@ -626,46 +706,31 @@ public class Scene implements Serializable {
         return bullets;
     }
 
-    public Set<Animation> getAnimations() {
-        return animations;
+    public BattleField getBattleField() {
+        return battleField;
     }
 
-    public GameMap getGameMap() {
-        return gameMap;
+    public Player getPlayer() {
+        return player;
     }
 
-    public static void dump(Scene scene) {
-        File dir = new File("/sdcard/TankWar");
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        File file = new File(dir, "dump");
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
-            out.writeObject(scene);
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public Player getNpcPlayer() {
+        return npcPlayer;
     }
 
-    public static Scene restore() {
-        File dir = new File("/sdcard/TankWar");
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+    public Tank getPlayerTank() {
+        return playerTank;
+    }
 
-        File file = new File(dir, "dump");
-        try {
-            ObjectInputStream input = new ObjectInputStream(new FileInputStream(file));
-            Scene scene = (Scene) input.readObject();
-            input.close();
+    public Iterable<? extends AbstractEntity> getAnimations() {
+        return Iterables.concat(explosions, hits, tankBirths, scores);
+    }
 
-            return scene;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    public void setSceneManager(SceneManager sceneManager) {
+        this.sceneManager = sceneManager;
+    }
+
+    public boolean isLose() {
+        return lose;
     }
 }

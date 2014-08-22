@@ -1,4 +1,4 @@
-package com.wupipi.tankwar.model;
+package com.wupipi.tankwar;
 
 /**
  * Created by xudong on 8/4/13.

@@ -1,18 +1,15 @@
 package com.wupipi.tankwar.model;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 /**
  * Created by xudong on 7/25/13.
  */
-public class TankStart extends AbstractEntity implements Animation {
+public class TankBirth extends AbstractEntity implements FrameAware {
 
     private int frame = 0;
     private int time = 0;
@@ -20,7 +17,7 @@ public class TankStart extends AbstractEntity implements Animation {
 
     private Tank tank;
 
-    public TankStart(Tank tank) {
+    public TankBirth(Tank tank) {
         this.tank = tank;
         this.position = tank.position;
     }
@@ -36,9 +33,8 @@ public class TankStart extends AbstractEntity implements Animation {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.tankStart[frame], null, getRect(), paint);
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.tankBirth[frame], position.x, position.y, paint);
     }
 
     public Tank getTank() {
@@ -57,7 +53,7 @@ public class TankStart extends AbstractEntity implements Animation {
         }
 
         if (num >= 3) {
-            scene.destroyTankStart(this);
+            scene.destroyTankBirth(this);
         }
     }
 }

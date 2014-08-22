@@ -4,19 +4,20 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 /**
  * Created by xudong on 7/25/13.
  */
-public class Bomb extends AbstractEntity implements FrameAware, Animation {
+public class Explosion extends AbstractEntity implements FrameAware {
 
     private int frame = 0;
     private int time = -3;
 
     private ScoreNumber scoreNumber;
 
-    public Bomb(Point point, ScoreNumber scoreNumber) {
+    public Explosion(Point point, ScoreNumber scoreNumber) {
         this.position = new Point(point.x - 16, point.y - 16);
         this.scoreNumber = scoreNumber;
     }
@@ -42,10 +43,10 @@ public class Bomb extends AbstractEntity implements FrameAware, Animation {
         }
     }
 
+
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.bomb[frame], null, getRect(), paint);
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.bomb[frame], position.x, position.y, paint);
     }
 
     public ScoreNumber getScoreNumber() {

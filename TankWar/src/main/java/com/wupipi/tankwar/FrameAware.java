@@ -1,4 +1,6 @@
-package com.wupipi.tankwar.model;
+package com.wupipi.tankwar;
+
+import com.wupipi.tankwar.model.Scene;
 
 import java.util.List;
 

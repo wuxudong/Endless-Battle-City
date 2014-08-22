@@ -10,16 +10,16 @@ import static com.wupipi.tankwar.ImageType.WATER;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Water extends AbstractEntity implements Obstacle {
+public class Water extends Obstacle {
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.images[WATER.ordinal()], null, getRect(), paint);
-    }
-
-    @Override
-    public boolean isCollidable() {
+    boolean isBlock() {
         return true;
     }
+
+    @Override
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.images[WATER.ordinal()], position.x, position.y, paint);
+    }
+
 }

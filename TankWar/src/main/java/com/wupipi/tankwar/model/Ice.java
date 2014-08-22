@@ -10,16 +10,15 @@ import static com.wupipi.tankwar.ImageType.ICE;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Ice extends AbstractEntity implements Obstacle {
+public class Ice extends Obstacle {
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.images[ICE.ordinal()], null, getRect(), paint);
+    boolean isBlock() {
+        return false;
     }
 
     @Override
-    public boolean isCollidable() {
-        return false;
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.images[ICE.ordinal()], position.x, position.y, paint);
     }
 }

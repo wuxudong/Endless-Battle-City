@@ -12,7 +12,7 @@ import static com.wupipi.tankwar.ImageType.HOME_DESTROYED;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Home extends AbstractEntity implements Obstacle {
+public class Home extends Obstacle {
 
     private boolean destroyed = false;
 
@@ -27,19 +27,17 @@ public class Home extends AbstractEntity implements Obstacle {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        if (!destroyed) {
-            canvas
-                    .drawBitmap(TankWarImage.images[HOME.ordinal()], null, getRect(), paint);
-        } else {
-            canvas
-                    .drawBitmap(TankWarImage.images[HOME_DESTROYED.ordinal()], null, getRect(), paint);
-        }
+    boolean isBlock() {
+        return true;
     }
 
     @Override
-    public boolean isCollidable() {
-        return true;
+    public void draw(Canvas canvas, Paint paint) {
+        if (!destroyed) {
+            canvas.drawBitmap(TankWarImage.images[HOME.ordinal()], position.x, position.y, paint);
+        } else {
+            canvas.drawBitmap(TankWarImage.images[HOME_DESTROYED.ordinal()], position.x, position.y, paint);
+        }
     }
 
     public boolean isDestroyed() {

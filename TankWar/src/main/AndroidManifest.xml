@@ -16,7 +16,7 @@
         android:theme="@style/AppTheme" >
 
         <activity
-            android:name=".TankWar"
+            android:name=".TankWarActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask" android:screenOrientation="landscape">
             <intent-filter>

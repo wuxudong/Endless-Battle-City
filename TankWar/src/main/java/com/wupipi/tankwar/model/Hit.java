@@ -4,12 +4,13 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 /**
  * Created by xudong on 7/25/13.
  */
-public class Hit extends AbstractEntity implements FrameAware, Animation {
+public class Hit extends AbstractEntity implements FrameAware {
 
     private int frame = 0;
     private int time = -3;
@@ -29,9 +30,8 @@ public class Hit extends AbstractEntity implements FrameAware, Animation {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.hit[frame], null, getRect(), paint);
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.hit[frame], position.x, position.y, paint);
     }
 
     @Override

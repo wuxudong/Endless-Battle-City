@@ -4,8 +4,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 
+import com.wupipi.tankwar.Ally;
 import com.wupipi.tankwar.Const;
 import com.wupipi.tankwar.Direction;
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 /**
@@ -40,52 +42,50 @@ public class Bullet extends AbstractEntity implements FrameAware {
 
     @Override
     public void nextFrame(Scene scene) {
-        Point next = null;
 
-        // Log.d("Tank_War", "bullet direction " + direction);
         switch (direction) {
             case EAST: {
-                next = new Point(position.x + speed, position.y);
+
+                position.set(position.x + speed, position.y);
                 break;
             }
             case WEST: {
-                next = new Point(position.x - speed, position.y);
+                position.set(position.x - speed, position.y);
                 break;
             }
             case NORTH: {
-                next = new Point(position.x, position.y - speed);
+                position.set(position.x, position.y - speed);
                 break;
             }
             default: {
-                next = new Point(position.x, position.y + speed);
+                position.set(position.x, position.y + speed);
                 break;
             }
         }
 
-        position = next;
-
-        int x = 0;
-        int y = 0;
+        int centerX = 0;
+        int centerY = 0;
         switch (direction) {
             case NORTH:
-                x = position.x + getWidth() / 2;
-                y = position.y;
+                centerX = position.x + getWidth() / 2;
+                centerY = position.y;
                 break;
             case SOUTH:
-                x = position.x + getWidth() / 2;
-                y = position.y + getHeight();
+                centerX = position.x + getWidth() / 2;
+                centerY = position.y + getHeight();
                 break;
             case WEST:
-                x = position.x;
-                y = position.y + getHeight() / 2;
+                centerX = position.x;
+                centerY = position.y + getHeight() / 2;
                 break;
             default:
-                x = position.x + getWidth();
-                y = position.y + getHeight() / 2;
+                centerX = position.x + getWidth();
+                centerY = position.y + getHeight() / 2;
                 break;
         }
 
-        if ((x < 0) || (x >= Const.TILE_COUNT * Const.OFFSET_PER_TILE) || (y < 0) || (y >= Const.TILE_COUNT * Const.OFFSET_PER_TILE)) {
+        // destroy bullet if bullet is out of battlefield
+        if ((centerX < 0) || (centerX >= Const.TILE_COUNT * Const.OFFSET_PER_TILE) || (centerY < 0) || (centerY >= Const.TILE_COUNT * Const.OFFSET_PER_TILE)) {
             scene.delayedDestroyBullet(this);
         }
     }
@@ -100,10 +100,8 @@ public class Bullet extends AbstractEntity implements FrameAware {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.bullet[direction.ordinal()], null, getRect(),
-                        paint);
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.bullet[direction.ordinal()], position.x, position.y, paint);
     }
 
     public int getPower() {

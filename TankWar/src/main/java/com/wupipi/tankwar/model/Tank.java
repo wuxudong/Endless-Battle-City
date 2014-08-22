@@ -7,8 +7,10 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.Log;
 
+import com.wupipi.tankwar.Ally;
 import com.wupipi.tankwar.Const;
 import com.wupipi.tankwar.Direction;
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.List;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Tank extends AbstractEntity implements FrameAware, Obstacle {
+public class Tank extends Obstacle implements FrameAware {
 
     private int speed = 4;
 
@@ -41,14 +43,14 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
     protected int godTime = 0;
 
     private Ally ally;
+
     private TankType tankType;
 
     private boolean carryFood = false;
 
     private Player player;
 
-    // if the tank is shot in current frame, it become invalid, and will be remove before next frame
-    private boolean valid = true;
+    private long age = 0;
 
     /**
      * Current direction the tank is headed.
@@ -66,12 +68,12 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
     @Override
     public int getWidth() {
-        return 32;
+        return 2 * Const.OFFSET_PER_TILE;
     }
 
     @Override
     public int getHeight() {
-        return 32;
+        return 2 * Const.OFFSET_PER_TILE;
     }
 
 
@@ -81,6 +83,7 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
     @Override
     public void nextFrame(final Scene scene) {
+        age ++;
 
         if (stopTime > 0) {
             stopTime--;
@@ -103,7 +106,6 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
         direction = nextDirection;
 
         if (move) {
-            Log.d("Tank_War", position.toString());
             switch (direction) {
                 case NORTH: {
                     int leftUpX = position.x;
@@ -139,7 +141,7 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
                     position = nextReachablePosition;
                     break;
                 }
-                default: {
+                case EAST: {
                     int leftUpX = position.x + getWidth();
                     int leftUpY = position.y;
 
@@ -155,9 +157,6 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
             }
         }
-
-        Log.d("TANK_WAR", direction.toString() + " " + position.toString());
-
 
         if (godTime > 0) {
             godTime--;
@@ -214,7 +213,6 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
                 }
 
                 return new Bullet(power, bulletSpeed, new Point(x, y), direction, this);
-                // Log.d("Tank_War", "fire to " + direction);
             } else {
                 return null;
             }
@@ -235,14 +233,13 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
         int reachableEastX = rect.right;
 
 
-        Log.d("TANK_WAR", rect.toString());
         for (Tile tile : crossedTiles) {
 
             for (Obstacle object : scene.
                     getObstacles(tile)) {
                 if (object == this) {
                     // do nothing
-                } else if (!object.isCollidable()) {
+                } else if (!object.isBlock()) {
                     // do nothing
                 } else {
                     reachableNorthY = Math.max(reachableNorthY, tile.getRect().bottom);
@@ -282,10 +279,10 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
+    public void draw(Canvas canvas, Paint paint) {
 
         if (carryFood) {
-            if ((scene.frame / 5) % 2 == 0)
+            if ((age / 5) % 2 == 0)
                 paint.setColorFilter(new LightingColorFilter(0xFFFFFFFF, 0x00FF0000));
         }
 
@@ -297,12 +294,8 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
                 break;
             }
-            case PLAY2: {
-                // TODO
-                break;
-            }
 
-            case NPC1: {
+            case NPC_NORMAL: {
                 canvas
                         .drawBitmap(TankWarImage.tank1[direction.ordinal()], null, getRect(),
                                 paint);
@@ -310,7 +303,7 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
                 break;
             }
 
-            case NPC2: {
+            case TANK_NPC_RACER: {
                 canvas
                         .drawBitmap(TankWarImage.tank2[direction.ordinal()], null, getRect(),
                                 paint);
@@ -318,7 +311,7 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
                 break;
             }
 
-            case NPC3: {
+            case TANK_NPC_ARMOR: {
                 canvas
                         .drawBitmap(TankWarImage.tank3[direction.ordinal()], null, getRect(),
                                 paint);
@@ -337,10 +330,6 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
         }
 
         paint.setColorFilter(null);
-
-        Log.d("Tank_War", getRect().toString());
-
-        Log.d("Tank_War", "CANVAS " + canvas.getWidth() + " " + canvas.getHeight());
     }
 
     public Ally getAlly() {
@@ -349,14 +338,14 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
     public ScoreNumber scoreNumber() {
         switch (tankType) {
-            case NPC1:
+            case NPC_NORMAL:
                 return ScoreNumber._100;
-            case NPC2:
+            case TANK_NPC_RACER:
                 return ScoreNumber._200;
-            case NPC3:
+            case TANK_NPC_ARMOR:
                 return ScoreNumber._400;
             default:
-                return ScoreNumber.NONE;
+                return null;
         }
     }
 
@@ -377,7 +366,7 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
     }
 
     @Override
-    public boolean isCollidable() {
+    public boolean isBlock() {
         return true;
     }
 
@@ -387,13 +376,5 @@ public class Tank extends AbstractEntity implements FrameAware, Obstacle {
 
     public void setHealth(int health) {
         this.health = health;
-    }
-
-    public boolean isValid() {
-        return valid;
-    }
-
-    public void setValid(boolean valid) {
-        this.valid = valid;
-    }
+     }
 }

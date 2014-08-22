@@ -45,7 +45,7 @@ public class TankWarImage {
   public static Bitmap[] food = new Bitmap[FoodType.values().length];
   public static Bitmap[] hit = new Bitmap[3];
   public static Bitmap[] bomb = new Bitmap[4];
-  public static Bitmap[] tankStart = new Bitmap[7];
+  public static Bitmap[] tankBirth = new Bitmap[7];
   public static Bitmap[] shield = new Bitmap[2];
 
   public static Bitmap[] playerLife = new Bitmap[2];
@@ -139,8 +139,8 @@ public class TankWarImage {
   }
 
   private static void initTankStart(Bitmap bitmap) {
-    for (int frame = 0; frame < tankStart.length; frame++) {
-      tankStart[frame] =
+    for (int frame = 0; frame < tankBirth.length; frame++) {
+      tankBirth[frame] =
           Bitmap
               .createBitmap(bitmap, 32 * frame + TANK_START_ORIGIN.x, TANK_START_ORIGIN.y, 32, 32);
     }

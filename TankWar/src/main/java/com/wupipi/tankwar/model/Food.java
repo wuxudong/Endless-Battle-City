@@ -5,6 +5,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 
 import com.wupipi.tankwar.FoodType;
+import com.wupipi.tankwar.FrameAware;
 import com.wupipi.tankwar.TankWarImage;
 
 /**
@@ -39,10 +40,9 @@ public class Food extends AbstractEntity implements FrameAware {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
+    public void draw(Canvas canvas, Paint paint) {
         if ((time / 5) % 2 == 0) {
-            canvas
-                    .drawBitmap(TankWarImage.food[foodType.ordinal()], null, getRect(), paint);
+            canvas.drawBitmap(TankWarImage.food[foodType.ordinal()], position.x, position.y, paint);
         }
     }
 

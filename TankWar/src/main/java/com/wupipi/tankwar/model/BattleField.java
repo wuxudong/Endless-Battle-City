@@ -9,7 +9,7 @@ import java.util.Iterator;
 /**
  * Created by xudong on 8/7/13.
  */
-public class GameMap {
+public class BattleField {
   private Obstacle[][] tiles = new Obstacle[Const.TILE_COUNT][Const.TILE_COUNT];
 
   public void setWall(int i, int j) {
@@ -66,7 +66,6 @@ public class GameMap {
     tiles[i][j] = ice;
   }
 
-
   public void setHome(int i, int j) {
     Home home = new Home();
     home.position = new Point(j * Const.OFFSET_PER_TILE, i * Const.OFFSET_PER_TILE);
@@ -106,6 +105,4 @@ public class GameMap {
   public Obstacle get(int i, int j) {
     return tiles[i][j];
   }
-
-
 }

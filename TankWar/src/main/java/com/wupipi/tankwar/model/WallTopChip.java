@@ -9,7 +9,7 @@ import com.wupipi.tankwar.TankWarImage;
 /**
  * Created by xudong on 7/25/13.
  */
-public class WallTopChip extends AbstractEntity implements Obstacle {
+public class WallTopChip extends Obstacle {
 
     @Override
     protected int getHeight() {
@@ -17,13 +17,12 @@ public class WallTopChip extends AbstractEntity implements Obstacle {
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.wallTopChip, null, getRect(), paint);
+    boolean isBlock() {
+        return true;
     }
 
     @Override
-    public boolean isCollidable() {
-        return true;
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.wallTopChip, position.x, position.y, paint);
     }
 }

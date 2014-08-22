@@ -10,16 +10,15 @@ import static com.wupipi.tankwar.ImageType.GRASS;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Grass extends AbstractEntity implements Obstacle {
+public class Grass extends Obstacle {
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.images[GRASS.ordinal()], null, getRect(), paint);
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.images[GRASS.ordinal()], position.x, position.y, paint);
     }
 
     @Override
-    public boolean isCollidable() {
+    public boolean isBlock() {
         return false;
     }
 }

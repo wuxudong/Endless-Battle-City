@@ -9,21 +9,19 @@ import com.wupipi.tankwar.TankWarImage;
 /**
  * Created by xudong on 7/25/13.
  */
-public class WallBottomChip extends AbstractEntity implements Obstacle {
+public class WallBottomChip extends Obstacle {
     @Override
     protected int getHeight() {
         return Const.OFFSET_PER_TILE / 2;
     }
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
-        canvas
-                .drawBitmap(TankWarImage.wallBottomChip, null, getRect(), paint);
-    }
-
-    @Override
-    public boolean isCollidable() {
+    boolean isBlock() {
         return true;
     }
 
+    @Override
+    public void draw(Canvas canvas, Paint paint) {
+        canvas.drawBitmap(TankWarImage.wallBottomChip, position.x, position.y, paint);
+    }
 }

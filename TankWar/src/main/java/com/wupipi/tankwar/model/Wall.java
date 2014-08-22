@@ -10,16 +10,16 @@ import static com.wupipi.tankwar.ImageType.WALL;
 /**
  * Created by xudong on 7/25/13.
  */
-public class Wall extends AbstractEntity implements Obstacle {
+public class Wall extends Obstacle {
 
     @Override
-    public void draw(Canvas canvas, Paint paint, Scene scene) {
+    public void draw(Canvas canvas, Paint paint) {
         canvas
-                .drawBitmap(TankWarImage.images[WALL.ordinal()], null, getRect(), paint);
+                .drawBitmap(TankWarImage.images[WALL.ordinal()], position.x, position.y, paint);
     }
 
     @Override
-    public boolean isCollidable() {
+    public boolean isBlock() {
         return true;
     }
 }
